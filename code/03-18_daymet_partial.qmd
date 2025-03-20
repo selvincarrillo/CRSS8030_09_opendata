@@ -188,6 +188,8 @@ daymet_all <-
                                  .site = site)
                         ))
 
+# inspect first rows 
+head(daymet_all)
 ```
 
 **March 20, 2025**  
@@ -200,7 +202,12 @@ daymet_all$weather[[1]]
 
 Now let's unnest the weather column.  
 ```{r}
-daymet_all_unnest 
+daymet_all_unnest <- 
+  daymet_all %>% 
+  unnest(weather) %>% #unnest the tibbles hidden 
+  pivot_wider(names_from = measurement, # days * sites
+              values_from = value) %>% 
+  janitor::clean_names()
 
 daymet_all_unnest
 
@@ -215,7 +222,9 @@ Therefore, a best practice here is to pull weather data once and export it to fi
 
 Let's do that below:  
 ```{r}
-
+# export the data so we can work on it 
+write_csv(daymet_all_unnest, 
+          "data/fieldweatherdata.csv")
 ```
 
 
@@ -231,13 +240,13 @@ There are MANY open-source data APIs relevant for agriculture applications, most
 Some of the ones I used in the past:  
   - **USDA NASS crop statistics**: https://cran.r-project.org/web/packages/rnassqs/vignettes/rnassqs.html  
   - Soil properties:  
-    - **POLARIS**: https://github.com/lhmrosso/XPolaris  
-    - **Soilsgrid**: https://rpubs.com/ials2un/soilgrids_webdav  
+    - **POLARIS**: https://github.com/lhmrosso/XPolaris  For the US
+    - **Soilsgrid**: https://rpubs.com/ials2un/soilgrids_webdav  For the wolds
     - **SSURGO**: https://search.r-project.org/CRAN/refmans/FedData/html/get_ssurgo.html    
   - **Soil water**: https://leombastos.github.io/bastoslab/teaching/2023-aghack-vwc/2023-aghack-vwc.html     
   - **Drought monitor**: https://droughtmonitor.unl.edu/DmData/DataDownload/WebServiceInfo.aspx    
   - **Remote sensing**: https://github.com/bevingtona/planetR  
-  - **Elevation**: https://github.com/jhollist/elevatr  
+  - **Elevation**: https://github.com/jhollist/elevatr  for on farm studies or determine how to place blocks 
   
 
 
