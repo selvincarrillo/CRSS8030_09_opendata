@@ -1,6 +1,8 @@
 ---
 title: "Feature Engineering"
 format: html
+editor_options: 
+  chunk_output_type: console
 ---
 
 # Introduction  
@@ -26,7 +28,7 @@ library(tidyverse)
 ```
 
 ```{r}
-fieldweather 
+fieldweather <- read_csv("data/fieldweatherdata.csv")
 
 fieldweather
 ```
@@ -37,12 +39,19 @@ Our data set contains **254,770** rows comprised by **698** site-years and **365
 ```{r}
 summary(fieldweather)
 ```
+The mean and median should be close if the data is normal. 
+
 
 Let's create some density plots to explore the weather data distributions.  
 ```{r}
 
-
+fieldweather %>% 
+  pivot_longer(cols = dayl_s:vp_pa) %>% 
+  ggplot(aes(x = value)) + 
+  geom_density() + 
+  facet_wrap(.~name, scales = "free")
 ```
+Look at the distribution of each variable 
 
 # Feature engineering  
 Let's take another look at the data at hand:
@@ -88,7 +97,11 @@ There are **two components** that we can consider when feature engineering weath
 
 In the next section, let's use the following:  
   - Summarizing time window size: **monthly**  
-  - Summarizing function: **mean** or **sum**  
+  - Summarizing function: **mean** or **sum** 
+  
+In the case of precipitation, we can use the sum of total precipitation per month, year, etc. For temperature it makes more sense to summarize by mean every week, month, etc.  
+
+Feature engineering means creating new variables from the ones that we have, like mean or median of temperature by week or month instead of daily. Or create a Growing Degree Days. 
 
 ## Quiz - go to eLC  
 
@@ -111,18 +124,34 @@ fe_month <- fieldweather %>%
                 tmax.c = tmax_deg_c, 
                 tmin.c = tmin_deg_c,
                 vp.pa = vp_pa
-                ) 
+                ) %>% 
   # Creating a date class variable  
-
+  mutate(date_chr = paste0(year, "/", yday)) %>% 
+  mutate(date = as.Date(date_chr, "%Y/%j")) %>%  # for as.Date give the date and then the format(look at the link above)
   # Extracting month from date  
-
+  mutate(month = month(date)) %>% 
+  mutate(month_abb = month(date, label = T))
 
 fe_month
 ```
 
 Now, let's summarize daily weather variables based on month.  
 ```{r fe_month_sum}
-fe_month_sum 
+fe_month_sum <- 
+  fe_month %>% 
+  group_by(year, site, month_abb, strength_gtex) %>% # keep strength_gtx even though is a response variable
+  summarise(across(.cols = c(dayl.s,
+                             srad.wm2, 
+                             tmax.c, 
+                             tmin.c, 
+                             vp.pa), 
+                   .fns = mean, 
+                   .names = "mean_{.col}"), # specify the column formate
+            across(.cols = prcp.mm, 
+                   .fns = sum, 
+                   .names = "sum_{.col}")
+            ) %>% 
+  ungroup()
 
 
 fe_month_sum
@@ -130,7 +159,7 @@ fe_month_sum
 
 8,376 rows because 698 site-years x 12 months.  
 
-Let's check tmax.c and prcp.mm for the first site-year and month.  
+Let's check tmax.c and prcp.mm for the first site-year and month.  This is to double check the values we got above for just one year, site, and month. 
 
 ```{r}
 fe_month %>%
@@ -144,7 +173,8 @@ fe_month %>%
 Now, what if we wanted to have month as part of the column name instead?  
 
 ```{r fe_month_sum_wide}
-fe_month_sum_wide 
+fe_month_sum_wide <- 
+  fe_month_sum %>% 
   # Rounding to one decimal point
 
 fe_month_sum_wide  
