@@ -145,7 +145,7 @@ fe_month_sum <-
                              tmax.c, 
                              tmin.c, 
                              vp.pa), 
-                   .fns = mean, 
+                   .fns = mean, # \(x) mean (x, na.rm = TRUE) to remove NA's 
                    .names = "mean_{.col}"), # specify the column formate
             across(.cols = prcp.mm, 
                    .fns = sum, 
